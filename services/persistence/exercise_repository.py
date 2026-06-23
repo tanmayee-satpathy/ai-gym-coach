@@ -25,6 +25,15 @@ def init_db() -> None:
             )
             """
         )
+        user_columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(users)").fetchall()
+        }
+        if "password_hash" not in user_columns:
+            conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+        if "display_name" not in user_columns:
+            conn.execute("ALTER TABLE users ADD COLUMN display_name TEXT")
+
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS exercises (
@@ -48,12 +57,13 @@ def get_user(username: str) -> sqlite3.Row:
     ).fetchone()
 
 
-def create_user(username: str) -> sqlite3.Row:
+def create_user(username: str, password_hash: str | None = None, display_name: str | None = None) -> sqlite3.Row:
     conn = _get_connection()
     
     with conn:
         conn.execute(
-            "INSERT INTO users (username) VALUES (?)", (username,)
+            "INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)",
+            (username, password_hash, display_name),
         )
 
     return get_user(username) 
@@ -66,6 +76,18 @@ def get_or_create_user(username: str) -> sqlite3.Row:
         user = create_user(username)
     
     return user
+
+
+def set_user_password(username: str, password_hash: str) -> sqlite3.Row:
+    conn = _get_connection()
+
+    with conn:
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE username = ?",
+            (password_hash, username),
+        )
+
+    return get_user(username)
 
 
 def add_exercise(user_id, exercise_name, reps, sets, time):

@@ -86,6 +86,8 @@ class BicepsCurlDetector(BaseExercise):
             "elbow_angle": int(elbow_angle),
             "shoulder_status": shoulder_status,
             "swing_status": swing_status,
+            "pose_detected": key_landmarks_visible,
+            "issue": "" if key_landmarks_visible else "Show your arm clearly, including shoulder, elbow, and wrist.",
         }
 
     def _safe_angle(self, dx, dy):

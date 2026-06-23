@@ -12,14 +12,16 @@ def initial_session_defaults():
         "last_notified_sets_completed": 0,
         "last_notified_workout_complete": False,
         "last_saved_sets_completed": 0,
+        "last_saved_reps": 0,
         "set_cycle_started_at": 0.0,
         "last_exercise_type": "Squats",
+        "tracking_status": "Waiting for workout to start",
 
         # Workout plan (set before starting)
         "workout_started": False,
         "plan_exercise": "Squats",
         "plan_sets": 3,
-        "plan_reps": 10,
+        "plan_reps": 5,
 
         # Common Angles
         "knee_angle": 0,

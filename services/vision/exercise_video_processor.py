@@ -214,7 +214,7 @@ class VideoProcessorClass(VideoProcessorBase):
             if detector:
                 metrics = detector.process(landmarks)
 
-                metrics["pose_detected"] = True
+                metrics.setdefault("pose_detected", True)
 
                 self._draw_overlays(image, metrics, ex_type)
 

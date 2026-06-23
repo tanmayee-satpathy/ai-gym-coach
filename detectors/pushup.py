@@ -90,5 +90,7 @@ class PushUpDetector(BaseExercise):
             "elbow_angle": int(elbow_angle),
             "body_alignment": body_alignment,
             "hip_status": hip_status,
+            "pose_detected": key_landmarks_visible,
+            "issue": "" if key_landmarks_visible else "Show your full push-up position, including shoulders, elbows, wrists, and hips.",
         }
     

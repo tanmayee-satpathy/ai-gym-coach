@@ -79,5 +79,7 @@ class LungesDetector(BaseExercise):
             "front_knee_angle": int(front_knee_angle),
             "torso_angle": int(torso_angle),
             "balance_status": balance_status,
+            "pose_detected": key_landmarks_visible,
+            "issue": "" if key_landmarks_visible else "Show your full lunge stance, including hips, knees, and ankles.",
         }
     

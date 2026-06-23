@@ -63,9 +63,9 @@ def inject_webrtc_styles():
                         .MuiButton-root,
                         .MuiButton-contained,
                         .MuiButton-text {{
-                            border-radius: 0 !important;
+                            border-radius: 12px !important;
                             font-family: 'AdobeClean', sans-serif !important;
-                            letter-spacing: 0.05em !important;
+                            letter-spacing: 0 !important;
                         }}
                     `;
                     doc.head.appendChild(style);

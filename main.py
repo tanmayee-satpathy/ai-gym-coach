@@ -2,6 +2,8 @@ import streamlit as st
 import os
 import time
 import pandas as pd
+from html import escape
+from dotenv import load_dotenv
 from services.auth.login_wall import render_login_wall
 from services.state.session_defaults import initial_session_defaults
 from services.config.workout_config import EXERCISE_OPTIONS
@@ -9,7 +11,7 @@ from services.ui.style_loader import load_css, inject_local_font, inject_webrtc_
 from services.persistence.exercise_repository import init_db
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 from services.vision.exercise_video_processor import VideoProcessorClass
-from services.tracking.metrics import sync_metrics_update
+from services.tracking.metrics import save_workout_progress, sync_metrics_update
 from services.persistence.exercise_repository import get_users_exercises
 from groq import Groq
 from services.coaching.llm import LLMCoach
@@ -18,6 +20,8 @@ from services.coaching.voice_pipeline import VoicePipeline, autoplay_audio
 
   
 def main():
+    load_dotenv()
+
     st.set_page_config(
         page_icon="🏋️‍♀️",
         page_title="AI Real-time GYM Coach",
@@ -52,10 +56,22 @@ def main():
     workout_started = st.session_state.get("workout_started", False)
     
     with st.sidebar:
-        st.title("🏋️‍♂️ Apna AI Coach")
+        st.title("🏋️‍♂️ Train Smarter Today")
 
         if st.session_state.username:
-            st.caption(f"👤 Login as {st.session_state.username}")
+            display_name = escape(st.session_state.get("display_name", st.session_state.username))
+            st.markdown(
+                f"""
+                <div class="sidebar-user-card">
+                    <span>Signed in as</span>
+                    <strong>{display_name}</strong>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("Log Out", key="logout_button", width="stretch"):
+                st.session_state.clear()
+                st.rerun()
 
         st.divider()
 
@@ -64,9 +80,9 @@ def main():
         if not workout_started:
             plan_exercise = st.selectbox("Exercise", options=EXERCISE_OPTIONS, key="plan_exercise")
 
-            plan_sets = st.number_input("Sets", min_value=0, max_value=50, key="plan_sets", step=1)
+            plan_sets = st.number_input("Sets", min_value=1, max_value=50, key="plan_sets", step=1)
 
-            plan_reps = st.number_input("Reps per Set", min_value=0, max_value=50, key="plan_reps", step=1)
+            plan_reps = st.number_input("Reps per Set", min_value=1, max_value=50, key="plan_reps", step=1)
 
             st.markdown("")
 
@@ -80,6 +96,7 @@ def main():
                 st.session_state.workout_started = True
                 st.session_state.set_cycle_started_at = time.time()
                 st.session_state.last_saved_sets_completed = 0
+                st.session_state.last_saved_reps = 0
 
                 if st.session_state.voice_pipeline:
                     result = st.session_state.voice_pipeline.process_event(
@@ -104,6 +121,7 @@ def main():
             end_session_button = st.button("End Workout", key="end_session_button", width="stretch")
 
             if end_session_button:
+                save_workout_progress(exercise)
                 st.session_state.workout_started = False
                 
                 if st.session_state.voice_pipeline:
@@ -129,6 +147,7 @@ def main():
 
             st.subheader("Progress")
 
+            st.caption(st.session_state.get("tracking_status", "Waiting for camera frames..."))
             st.metric("Total Reps", f"{total_reps}")
             st.metric("Current Set Reps", f"{current_set_reps} / {reps_per_set}")
             st.metric("Sets Completed", f"{sets_completed} / {target_sets}")
@@ -165,11 +184,37 @@ def main():
                 st.metric("Torso Angle", f"{st.session_state.torso_angle}°")
                 st.metric("Balance Status", st.session_state.balance_status)
 
-    st.title("AI Real-time GYM Coach")
-    st.markdown("#### Real-time pose detection with proactive AI voice coaching")
+    st.markdown('<div class="dashboard-page-marker"></div>', unsafe_allow_html=True)
+    display_name = escape(st.session_state.get("display_name", st.session_state.get("username", "Athlete")))
+    st.markdown(
+        f"""
+        <section class="coach-hero">
+            <div class="coach-hero__copy">
+                <div class="coach-kicker">AI real-time gym coach</div>
+                <h1>Welcome back, {display_name}</h1>
+                <p>
+                    Set your plan from the fixed sidebar, start the camera, and get
+                    live rep tracking with proactive voice coaching.
+                </p>
+                <div class="coach-chips">
+                    <span>Pose detection</span>
+                    <span>Voice feedback</span>
+                    <span>Workout history</span>
+                </div>
+            </div>
+            <div class="coach-hero__visual">
+                <div class="coach-pulse coach-pulse--one"></div>
+                <div class="coach-ring">AI</div>
+                <div class="coach-pulse coach-pulse--two"></div>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
  
     if st.session_state.get("audio_to_play"):
         autoplay_audio(st.session_state.audio_to_play)
+        st.session_state.audio_to_play = None
 
     if st.session_state.get("coach_feedback"):
         st.markdown("")
@@ -178,20 +223,18 @@ def main():
     if not workout_started:
         st.markdown(
             """
-            <div style="
-                border: 10px dashed #444;
-                border-radius: 0px;
-                padding: 48px 32px;
-                text-align: center;
-                color: #888;
-                margin-top: 32px;
-                margin-bottom: 32px;
-            ">
-                <h2 style="color:#ccc; margin-bottom:8px;">👈 Set your workout plan</h2>
-                <p style="font-size:1.05rem;">
-                    Choose your exercise, sets and reps in the sidebar,<br>
-                    then click <strong>Start Workout</strong> to activate the camera and AI coach.
+            <div class="workout-empty">
+                <div class="workout-empty__icon">AI</div>
+                <h2>Build today&apos;s workout plan</h2>
+                <p>
+                    Choose an exercise, sets, and reps from the fixed sidebar.
+                    Then use the Streamlit Start Workout button to activate your camera and coach.
                 </p>
+                <div class="workout-empty__steps">
+                    <span>1. Pick exercise</span>
+                    <span>2. Set targets</span>
+                    <span>3. Start coaching</span>
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -219,7 +262,7 @@ def main():
 
     st.divider()
 
-    st.markdown("#### Workout History")
+    st.markdown('<h3 class="section-title">Workout History</h3>', unsafe_allow_html=True)
 
     user_id = st.session_state.get("user_id", 0)
 

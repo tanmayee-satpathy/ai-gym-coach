@@ -4,11 +4,47 @@ from services.config.workout_config import METRICS_FIELDS
 from services.persistence.exercise_repository import add_exercise
 
 
+def save_workout_progress(exercise=None, metrics=None):
+    exercise = exercise or st.session_state.get("exercise_type")
+
+    if not exercise:
+        return False
+
+    total_reps = int(st.session_state.get("reps") or 0)
+    reps_per_set = int(st.session_state.get("reps_per_set") or 0)
+    last_saved_reps = int(st.session_state.get("last_saved_reps") or 0)
+    last_saved_sets = int(st.session_state.get("last_saved_sets_completed") or 0)
+    saved_reps = max(last_saved_reps, last_saved_sets * reps_per_set)
+    unsaved_reps = max(total_reps - saved_reps, 0)
+
+    if unsaved_reps <= 0:
+        return False
+
+    unsaved_sets = unsaved_reps // reps_per_set if reps_per_set > 0 else 0
+    now_ts = time.time()
+    started_at = st.session_state.get("set_cycle_started_at", now_ts)
+    time_taken = max(now_ts - started_at, 0)
+    user_id = st.session_state.get("user_id", 0)
+
+    add_exercise(user_id, exercise, unsaved_reps, unsaved_sets, time_taken)
+
+    if reps_per_set > 0:
+        st.session_state.last_saved_sets_completed = total_reps // reps_per_set
+
+    st.session_state.last_saved_reps = max(total_reps, saved_reps + unsaved_reps)
+    st.session_state.set_cycle_started_at = now_ts
+    return True
+
+
 def sync_metrics_update(context):
     if not context or not hasattr(context, "state") or not context.state.playing:
         return
     
-    processor = getattr(context, "video_processor", None)
+    processor = (
+        getattr(context, "video_processor", None)
+        or getattr(context, "video_transformer", None)
+        or getattr(context, "_video_processor", None)
+    )
 
     if not processor:
         return 
@@ -22,6 +58,7 @@ def sync_metrics_update(context):
     latest_metrics = processor.get_latest_metrics()
 
     if not latest_metrics:
+        st.session_state.tracking_status = "Waiting for camera frames..."
         return
     
     reps = latest_metrics.get("reps", 0)
@@ -78,6 +115,7 @@ def sync_metrics_update(context):
 
         st.session_state.set_cycle_started_at = now_ts
         st.session_state.last_saved_sets_completed = sets_completed
+        st.session_state.last_saved_reps = sets_completed * reps_per_set
 
     if workout_completed and not st.session_state.get("last_notified_workout_complete", False):
         st.session_state.last_notified_workout_complete = True
@@ -93,6 +131,11 @@ def sync_metrics_update(context):
                 st.session_state.audio_to_play, st.session_state.coach_feedback = result
                 
     pose_detected = latest_metrics.get("pose_detected", True)
+    st.session_state.tracking_status = (
+        "Tracking exercise movement"
+        if pose_detected
+        else latest_metrics.get("issue") or "Move into frame so the coach can see the exercise."
+    )
     
     if not pose_detected and st.session_state.get("voice_pipeline"):
         result = st.session_state.voice_pipeline.process_event(

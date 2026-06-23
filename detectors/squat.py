@@ -72,6 +72,8 @@ class SquatDetector(BaseExercise):
             "reps": self.reps,
             "knee_angle": int(knee_angle),
             "back_angle": int(back_angle),
-            "depth_status": depth_status
+            "depth_status": depth_status,
+            "pose_detected": key_landmark_visible,
+            "issue": "" if key_landmark_visible else "Show your full body in the camera, including hips, knees, and ankles.",
         }
     

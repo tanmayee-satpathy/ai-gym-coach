@@ -84,5 +84,7 @@ class ShoulderPressDetector(BaseExercise):
             "elbow_angle": int(elbow_angle),
             "extension_status": extension_status,
             "back_arch_status": back_arch_status,
+            "pose_detected": key_landmarks_visible,
+            "issue": "" if key_landmarks_visible else "Show your pressing arm clearly, including shoulder, elbow, and wrist.",
         }
     
