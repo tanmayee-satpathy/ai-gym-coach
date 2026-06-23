@@ -39,9 +39,9 @@ def main():
         if not workout_started:
             st.selectbox("Exercise", options=EXERCISE_OPTIONS, key="plan_exercise")
 
-            st.number_input("Sets", min_value=0, max_value=50, key="plan_sets", step=1)
+            st.number_input("Sets", min_value=1, max_value=50, key="plan_sets", step=1)
 
-            st.number_input("Reps per Set", min_value=0, max_value=50, key="plan_reps", step=1)
+            st.number_input("Reps per Set", min_value=1, max_value=50, key="plan_reps", step=1)
 
             st.markdown("")
 
