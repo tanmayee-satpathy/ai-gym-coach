@@ -38,8 +38,8 @@ class VideoProcessorClass(VideoProcessorBase):
             )
 
             self._landmarker = vision.PoseLandmarker.create_from_options(options)
-        except OSError:
-            self._startup_error = "Pose tracking is unavailable on this server."
+        except OSError as exc:
+            self._startup_error = f"Pose tracking startup failed: {exc}"
 
         self._detectors = {
             "Squats": SquatDetector(),
@@ -52,27 +52,42 @@ class VideoProcessorClass(VideoProcessorBase):
         self._frame_timestamps_ms = 0
 
     def _draw_startup_error(self, img):
-        cv2.putText(
-            img,
-            self._startup_error or "POSE TRACKING UNAVAILABLE",
-            (30, 50),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.9,
-            (0, 255, 255),
-            2,
-            cv2.LINE_AA,
-        )
+        lines = [
+            "POSE TRACKING UNAVAILABLE",
+            *(self._wrap_overlay_text(self._startup_error or "", 58)[:3]),
+        ]
 
-        cv2.putText(
-            img,
-            "Install server media dependencies and restart.",
-            (30, 95),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
-            (0, 255, 255),
-            2,
-            cv2.LINE_AA,
-        )
+        for index, line in enumerate(lines):
+            cv2.putText(
+                img,
+                line,
+                (24, 44 + index * 34),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.75,
+                (0, 255, 255),
+                2,
+                cv2.LINE_AA,
+            )
+
+    def _wrap_overlay_text(self, text, max_chars):
+        words = text.split()
+        lines = []
+        current = ""
+
+        for word in words:
+            candidate = f"{current} {word}".strip()
+            if len(candidate) <= max_chars:
+                current = candidate
+                continue
+
+            if current:
+                lines.append(current)
+            current = word[:max_chars]
+
+        if current:
+            lines.append(current)
+
+        return lines
     
     def set_latest_metrics(self, metrics):
         with self._lock:
