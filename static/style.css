@@ -2733,3 +2733,30 @@ footer {
     padding: 1.4rem 2rem 3rem !important;
   }
 }
+
+.stApp:has(.auth-page-marker) [data-testid="stTextInput"] > div,
+.stApp:has(.auth-page-marker) [data-testid="stTextInput"] > div > div,
+.stApp:has(.auth-page-marker) [data-testid="stTextInput"] > div > div > div {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.stApp:has(.auth-page-marker) [data-testid="stTextInput"] [data-baseweb="input"] {
+  background: transparent !important;
+  border-radius: 18px !important;
+  overflow: visible !important;
+}
+
+.stApp:has(.auth-page-marker) [data-testid="stTextInput"] [data-baseweb="input"] > div {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.stApp:has(.auth-page-marker) [data-testid="stTextInput"] button,
+.stApp:has(.auth-page-marker) [data-testid="stTextInput"] button:hover,
+.stApp:has(.auth-page-marker) [data-testid="stTextInput"] button:focus {
+  border: 0 !important;
+  outline: 0 !important;
+}
