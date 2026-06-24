@@ -396,8 +396,6 @@ See [LICENSE](LICENSE) for more information.
 
 <div align="center">
 
-<img src="assets/fitnova-logo.png" width="120" alt="FitNovaAI Logo">
-
 ### FitNovaAI
 
 Train smarter. Move better. Let AI coach every rep.
