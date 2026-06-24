@@ -20,20 +20,26 @@ class VideoProcessorClass(VideoProcessorBase):
         self._lock = threading.Lock()
         self._latest_metrics = None
         self._exercise_type = "Squats"
+        self._startup_error = None
 
         model_path = os.path.join(os.getcwd(), "ml_models", "pose_landmarker_full.task")
-        base_option = python.BaseOptions(model_asset_path=model_path)
+        self._landmarker = None
 
-        options = vision.PoseLandmarkerOptions(
-            base_options=base_option,
-            running_mode=vision.RunningMode.VIDEO,
-            min_pose_detection_confidence=0.7,
-            min_pose_presence_confidence=0.7,
-            min_tracking_confidence=0.7,
-            output_segmentation_masks=False
-        )
+        try:
+            base_option = python.BaseOptions(model_asset_path=model_path)
 
-        self._landmarker = vision.PoseLandmarker.create_from_options(options)
+            options = vision.PoseLandmarkerOptions(
+                base_options=base_option,
+                running_mode=vision.RunningMode.VIDEO,
+                min_pose_detection_confidence=0.7,
+                min_pose_presence_confidence=0.7,
+                min_tracking_confidence=0.7,
+                output_segmentation_masks=False
+            )
+
+            self._landmarker = vision.PoseLandmarker.create_from_options(options)
+        except OSError:
+            self._startup_error = "Pose tracking is unavailable on this server."
 
         self._detectors = {
             "Squats": SquatDetector(),
@@ -44,6 +50,29 @@ class VideoProcessorClass(VideoProcessorBase):
         }
 
         self._frame_timestamps_ms = 0
+
+    def _draw_startup_error(self, img):
+        cv2.putText(
+            img,
+            self._startup_error or "POSE TRACKING UNAVAILABLE",
+            (30, 50),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.9,
+            (0, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
+
+        cv2.putText(
+            img,
+            "Install server media dependencies and restart.",
+            (30, 95),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (0, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
     
     def set_latest_metrics(self, metrics):
         with self._lock:
@@ -193,6 +222,12 @@ class VideoProcessorClass(VideoProcessorBase):
             cv2.flip(frame.to_ndarray(format="bgr24"), 1),
             dtype=np.uint8
         )
+
+        if self._landmarker is None:
+            self._draw_startup_error(image)
+            with self._lock:
+                self._latest_metrics = {"pose_detected": False}
+            return av.VideoFrame.from_ndarray(image, format="bgr24")
 
         mp_image = mp.Image(
             image_format=mp.ImageFormat.SRGB,
