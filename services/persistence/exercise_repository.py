@@ -12,15 +12,15 @@ def _get_connection() -> sqlite3.Connection:
     return conn
 
 
-def init_db() -> None:
-    conn = _get_connection()
-
+def _ensure_schema(conn: sqlite3.Connection) -> None:
     with conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS users (
                 id         INTEGER PRIMARY KEY AUTOINCREMENT,
                 username   TEXT UNIQUE NOT NULL,
+                password_hash TEXT,
+                display_name TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
@@ -49,17 +49,27 @@ def init_db() -> None:
         )
 
 
+def init_db() -> None:
+    _ensure_schema(_get_connection())
+
+
 def get_user(username: str) -> sqlite3.Row:
     conn = _get_connection()
+    _ensure_schema(conn)
 
     return conn.execute(
         "SELECT * FROM users WHERE username = ?", (username,)
     ).fetchone()
 
 
-def create_user(username: str, password_hash: str | None = None, display_name: str | None = None) -> sqlite3.Row:
+def create_user(
+    username: str,
+    password_hash: str | None = None,
+    display_name: str | None = None,
+) -> sqlite3.Row:
     conn = _get_connection()
-    
+    _ensure_schema(conn)
+
     with conn:
         conn.execute(
             "INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)",
@@ -80,6 +90,7 @@ def get_or_create_user(username: str) -> sqlite3.Row:
 
 def set_user_password(username: str, password_hash: str) -> sqlite3.Row:
     conn = _get_connection()
+    _ensure_schema(conn)
 
     with conn:
         conn.execute(
@@ -92,6 +103,7 @@ def set_user_password(username: str, password_hash: str) -> sqlite3.Row:
 
 def add_exercise(user_id, exercise_name, reps, sets, time):
     conn = _get_connection()
+    _ensure_schema(conn)
 
     with conn:
         existing = conn.execute("""
@@ -114,6 +126,7 @@ def add_exercise(user_id, exercise_name, reps, sets, time):
 
 def get_users_exercises(user_id):
     conn = _get_connection()
+    _ensure_schema(conn)
 
     return conn.execute("""
         SELECT * FROM exercises 
