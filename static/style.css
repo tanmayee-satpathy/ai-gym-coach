@@ -2707,3 +2707,29 @@ footer {
     padding-bottom: 1.25rem !important;
   }
 }
+
+/* Match the preferred 80% browser zoom density on desktop dashboard screens. */
+@media (min-width: 901px) {
+  .stApp:has(.dashboard-page-marker) [data-testid="stSidebar"] {
+    width: 256px !important;
+    min-width: 256px !important;
+    max-width: 256px !important;
+  }
+
+  .stApp:has(.dashboard-page-marker) [data-testid="stSidebar"] > div:first-child {
+    zoom: 0.8;
+    width: 320px !important;
+    min-height: 125vh !important;
+    padding: 2rem 1.25rem !important;
+  }
+
+  .stApp:has(.dashboard-page-marker) [data-testid="stAppViewContainer"] {
+    margin-left: 256px !important;
+  }
+
+  .stApp:has(.dashboard-page-marker) .block-container {
+    zoom: 0.8;
+    max-width: 1400px !important;
+    padding: 1.4rem 2rem 3rem !important;
+  }
+}
