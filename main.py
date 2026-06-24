@@ -78,7 +78,7 @@ def main():
         st.subheader("Workout Plan")
 
         if not workout_started:
-            plan_exercise = st.selectbox("Exercise", options=EXERCISE_OPTIONS, key="plan_exercise")
+            plan_exercise = st.selectbox("Choose Your Exercise", options=EXERCISE_OPTIONS, key="plan_exercise")
 
             plan_sets = st.number_input("Sets", min_value=1, max_value=50, key="plan_sets", step=1)
 
