@@ -1,8 +1,12 @@
 import sqlite3
 import streamlit as st
+import tempfile
 from pathlib import Path
 
-_DB_PATH = str(Path(__file__).parent.parent.parent / "data.db")
+_APP_ROOT = Path(__file__).parent.parent.parent
+_LOCAL_DB_PATH = _APP_ROOT / "data.db"
+_CLOUD_DB_PATH = Path(tempfile.gettempdir()) / "ai_gym_coach_data.db"
+_DB_PATH = str(_CLOUD_DB_PATH if str(_APP_ROOT).startswith("/mount/src/") else _LOCAL_DB_PATH)
 
 
 @st.cache_resource
